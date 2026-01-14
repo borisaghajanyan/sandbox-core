@@ -1,18 +1,19 @@
 # sandbox-core
 
-Language-agnostic sandbox library for executing code snippets and storing in-memory data.
+Language-agnostic sandbox library for executing code snippets and managing temporary files.
 
 ## Features
 
-- CodeExecutor interface
-- ExecutionResult model
-- CodeSnippet model
-- Fully testable
+- CodeExecutor interface for language-agnostic code execution.
+- TempFileManager for robust temporary file management with retry mechanism.
+- ExecutionResult and CodeSnippet models for clear data representation.
+- Fully testable with a decoupled, interface-based architecture.
 
 ## Modules
 
-- **executor**: Code execution engine
-- **model**: Data models for code snippets
+- **executor**: Code execution engine.
+- **model**: Data models for code snippets and execution results.
+- **fs**: File system utilities, including the TempFileManager.
 
 ## Build
 
@@ -34,26 +35,40 @@ Add as Maven dependency (after building locally):
 </dependency>
 ```
 
-### Example
+### TempFileManager Example
 
 ```java
-import com.baghajanyan.sandbox.core.executor.CodeExecutor;
-import com.baghajanyan.sandbox.core.executor.ExecutionResult;
-import com.baghajanyan.sandbox.core.model.CodeSnippet;
+import com.baghajanyan.sandbox.core.fs.TempFileManager;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
 
-class MyExecutor implements CodeExecutor {
-    @Override
-    public ExecutionResult execute(CodeSnippet snippet) {
-        // Implement your execution logic here
-        return new ExecutionResult(0, "Hello, " + snippet.code(), "");
-    }
-}
+public class TempFileExample {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        // Create a TempFileManager with 3 retry attempts and a 100ms delay.
+        var tempFileManager = new TempFileManager(3, Duration.ofMillis(100));
 
-public class Main {
-    public static void main(String[] args) {
-        var executor = new MyExecutor();
-        var result = executor.execute(new CodeSnippet("World", "text"));
-        System.out.println(result.stdout()); // Hello, World
+        // Create a temporary file.
+        Path tempFile = tempFileManager.createTempFile("my-temp-file", ".txt");
+        System.out.println("Created temporary file: " + tempFile);
+
+        // Asynchronously delete the file.
+        tempFileManager.deleteAsync(tempFile);
+        System.out.println("Asynchronously deleting file...");
+
+        // Give some time for the async deletion to complete.
+        Thread.sleep(500);
+
+        System.out.println("File deleted.");
     }
 }
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
+
+## License
+
+This project is licensed under the MIT License.
+
