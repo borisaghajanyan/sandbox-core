@@ -60,5 +60,8 @@ public class TempFileManager {
                 }
             }
         }
+        if (attempts >= maxRetryCount) {
+            System.err.println("Failed to delete temp file: " + path + " after " + maxRetryCount + " attempts.");
+        }
     }
 }
