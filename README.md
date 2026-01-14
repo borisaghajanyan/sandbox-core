@@ -7,12 +7,10 @@ Language-agnostic sandbox library for executing code snippets and storing in-mem
 - CodeExecutor interface
 - ExecutionResult model
 - CodeSnippet model
-- DataStore interface
 - Fully testable
 
 ## Modules
 
-- **datastore**: In-memory data storage
 - **executor**: Code execution engine
 - **model**: Data models for code snippets
 
