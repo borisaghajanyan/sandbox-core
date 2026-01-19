@@ -8,6 +8,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class TempFileManager {
+    /**
+     * Executor service for handling asynchronous file deletions.
+     */
     private static final ExecutorService DELETE_EXECUTOR = Executors.newSingleThreadExecutor(
             task -> {
                 var thread = new Thread(task, "temp-file-delete-thread");
@@ -23,6 +26,9 @@ public class TempFileManager {
         this(new DefaultFileSystem(), maxRetryCount, retryDelay);
     }
 
+    /**
+     * For testing purposes.
+     */
     public TempFileManager(FileSystem fileSystem, int maxRetryCount, Duration retryDelay) {
         this.fileSystem = fileSystem;
         this.maxRetryCount = maxRetryCount;
