@@ -7,7 +7,7 @@ public interface CodeExecutor {
      * Executes the given code snippet and returns the result of the execution.
      * 
      * @param snippet The code snippet to be executed.
-     * @return An ExecutionResult containing details about the execution.
+     * @return An {@code ExecutionResult} containing details about the execution.
      */
     ExecutionResult execute(CodeSnippet snippet);
 }
