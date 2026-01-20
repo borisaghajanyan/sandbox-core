@@ -4,9 +4,9 @@ Language-agnostic sandbox library for executing code snippets and managing tempo
 
 ## Features
 
-- CodeExecutor interface for language-agnostic code execution.
-- TempFileManager for robust temporary file management with retry mechanism.
-- ExecutionResult and CodeSnippet models for clear data representation.
+- **CodeExecutor** interface for language-agnostic code execution.
+- **TempFileManager** for robust temporary file management with retry mechanism.
+- **ExecutionResult** and **CodeSnippet** models for clear data representation.
 - Fully testable with a decoupled, interface-based architecture.
 
 ## Modules
@@ -75,9 +75,9 @@ public class TempFileExample {
 
 ## Logging
 
-This library uses the [SLF4J](https://www.slf4j.org/) API for logging. This means you can choose your own logging framework (like Logback, Log4j2, or `java.util.logging`) by adding the appropriate SLF4J binding to your project. The library does not force a specific logging implementation on you.
+This library uses the [SLF4J](https://www.slf4j.org/) API for logging. This means you can choose your own logging framework (like `Logback`, `Log4j2`, or `java.util.logging`) by adding the appropriate SLF4J binding to your project. The library does not force a specific logging implementation on you.
 
-For example, to use Logback, you would add the `logback-classic` dependency to your `pom.xml`.
+For example, to use `Logback`, you would add the `logback-classic` dependency to your `pom.xml`.
 
 ## Contributing
 
