@@ -11,8 +11,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages creation and cleanup of temporary files.
@@ -67,13 +67,13 @@ import java.util.logging.Logger;
 public class TempFileManager implements AutoCloseable {
 
     private static final AtomicInteger THREAD_COUNT = new AtomicInteger(0);
+    private static final Logger logger = LoggerFactory.getLogger(TempFileManager.class);
 
     private final FileSystem fileSystem;
     private final int maxRetryCount;
     private final Duration retryDelay;
     private final Duration terminationTimeout;
     private final ExecutorService deleteExecutor;
-    private final Logger logger;
 
     /**
      * Creates a {@link TempFileManager} with default FileSystem.
@@ -99,7 +99,7 @@ public class TempFileManager implements AutoCloseable {
     public TempFileManager(FileSystem fileSystem, int maxRetryCount, Duration retryDelay, Duration terminationTimeout) {
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem cannot be null");
         if (maxRetryCount < 1) {
-            throw new IllegalArgumentException("maxRetryCount must be positive");
+            throw new IllegalArgumentException("maxRetryCount must be be positive");
         }
         if (retryDelay == null || retryDelay.isNegative() || retryDelay.isZero()) {
             throw new IllegalArgumentException("retryDelay must be positive");
@@ -113,7 +113,6 @@ public class TempFileManager implements AutoCloseable {
         this.terminationTimeout = terminationTimeout;
 
         this.deleteExecutor = Executors.newSingleThreadExecutor(backgroundThreadFactory());
-        this.logger = Logger.getLogger(TempFileManager.class.getName());
     }
 
     /**
@@ -141,7 +140,7 @@ public class TempFileManager implements AutoCloseable {
             ExecutorService deleteExecutor) {
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem cannot be null");
         if (maxRetryCount < 1) {
-            throw new IllegalArgumentException("maxRetryCount must be positive");
+            throw new IllegalArgumentException("maxRetryCount must be be positive");
         }
         if (retryDelay == null || retryDelay.isNegative() || retryDelay.isZero()) {
             throw new IllegalArgumentException("retryDelay must be positive");
@@ -155,7 +154,6 @@ public class TempFileManager implements AutoCloseable {
         this.terminationTimeout = terminationTimeout;
 
         this.deleteExecutor = Objects.requireNonNull(deleteExecutor, "deleteExecutor cannot be null");
-        this.logger = Logger.getLogger(TempFileManager.class.getName());
     }
 
     /**
@@ -179,12 +177,11 @@ public class TempFileManager implements AutoCloseable {
         try {
             boolean allDone = deleteExecutor.awaitTermination(terminationTimeout.toMillis(), TimeUnit.MILLISECONDS);
             if (!allDone) {
-                logger.warning(
-                        "Not all temp files were deleted within %s seconds".formatted(terminationTimeout.toSeconds()));
+                logger.warn("Not all temp files were deleted within {} seconds", terminationTimeout.toSeconds());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warning("Interrupted while waiting for deletions to finish");
+            logger.warn("Interrupted while waiting for deletions to finish");
         }
     }
 
@@ -230,7 +227,7 @@ public class TempFileManager implements AutoCloseable {
     private void deleteWithRetry(Path path) {
         for (int attempt = 1; attempt <= maxRetryCount; attempt++) {
             if (Thread.currentThread().isInterrupted()) {
-                logger.warning(() -> "Delete task interrupted for " + path);
+                logger.warn("Delete task interrupted for {}", path);
                 return;
             }
 
@@ -243,15 +240,14 @@ public class TempFileManager implements AutoCloseable {
                 return;
 
             } catch (IOException e) {
-                logger.log(Level.WARNING,
-                        "Failed to delete temp file (attempt {0}/{1}, retryDelay={2}ms, error={3}): {4}",
-                        new Object[] { attempt, maxRetryCount, retryDelay.toMillis(), e.getMessage(), path });
+                logger.warn("Failed to delete temp file (attempt {}/{}, retryDelay={}ms, error={}): {}",
+                        attempt, maxRetryCount, retryDelay.toMillis(), e.getMessage(), path);
 
                 sleepBeforeRetry();
             }
         }
 
-        logger.severe(() -> "Giving up deleting temp file after " + maxRetryCount + " attempts: " + path);
+        logger.error("Giving up deleting temp file after {} attempts: {}", maxRetryCount, path);
     }
 
     private void sleepBeforeRetry() {

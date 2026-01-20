@@ -37,32 +37,47 @@ Add as Maven dependency (after building locally):
 
 ### TempFileManager Example
 
+The following example demonstrates how to create a temporary file and wait for its asynchronous deletion to complete.
+
 ```java
 import com.baghajanyan.sandbox.core.fs.TempFileManager;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class TempFileExample {
-    public static void main(String[] args) throws IOException, InterruptedException {
-        // Create a TempFileManager with 3 retry attempts and a 100ms delay.
-        var tempFileManager = new TempFileManager(3, Duration.ofMillis(100));
+    public static void main(String[] args)
+            throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        // Use a try-with-resources block to ensure the TempFileManager is closed properly.
+        // This manager has 3 retry attempts with a 100ms delay, and a 5-second shutdown timeout.
+        try (var tempFileManager = new TempFileManager(3, Duration.ofMillis(100), Duration.ofSeconds(5))) {
+            // Create a temporary file.
+            Path tempFile = tempFileManager.createTempFile("my-temp-file", ".txt");
+            System.out.println("Created temporary file: " + tempFile);
 
-        // Create a temporary file.
-        Path tempFile = tempFileManager.createTempFile("my-temp-file", ".txt");
-        System.out.println("Created temporary file: " + tempFile);
+            // Asynchronously delete the file and get the Future.
+            Future<?> deleteFuture = tempFileManager.deleteAsync(tempFile);
+            System.out.println("Asynchronously deleting file...");
 
-        // Asynchronously delete the file.
-        tempFileManager.deleteAsync(tempFile);
-        System.out.println("Asynchronously deleting file...");
+            // Block and wait for the deletion to complete (up to a timeout).
+            // This is more reliable than Thread.sleep().
+            deleteFuture.get(1, TimeUnit.SECONDS);
 
-        // Give some time for the async deletion to complete.
-        Thread.sleep(500);
-
-        System.out.println("File deleted.");
+            System.out.println("File deletion confirmed.");
+        }
     }
 }
 ```
+
+## Logging
+
+This library uses the [SLF4J](https://www.slf4j.org/) API for logging. This means you can choose your own logging framework (like Logback, Log4j2, or `java.util.logging`) by adding the appropriate SLF4J binding to your project. The library does not force a specific logging implementation on you.
+
+For example, to use Logback, you would add the `logback-classic` dependency to your `pom.xml`.
 
 ## Contributing
 
@@ -71,4 +86,3 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 ## License
 
 This project is licensed under the MIT License.
-

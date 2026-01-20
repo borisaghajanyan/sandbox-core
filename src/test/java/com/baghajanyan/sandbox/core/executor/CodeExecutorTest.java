@@ -22,7 +22,7 @@ public class CodeExecutorTest {
         assertAll(
                 () -> assertEquals(0, result.exitCode()),
                 () -> assertEquals("Dummy Output", result.stdout()),
-                () -> assertEquals("Dummy Output", result.stdout()),
+                () -> assertEquals("", result.stderr()),
                 () -> assertEquals(1L, result.executionTime()));
     }
 }

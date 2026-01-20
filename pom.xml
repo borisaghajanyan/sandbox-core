@@ -13,9 +13,21 @@
 		<junit.version>5.10.2</junit.version>
 		<mockito.version>5.12.0</mockito.version>
 		<maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+		<slf4j.version>2.0.17</slf4j.version>
 	</properties>
 	<url>https://github.com/borisaghajanyan/sandbox-core</url>
 	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
