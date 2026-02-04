@@ -2,6 +2,10 @@
 
 Language-agnostic sandbox library for executing code snippets and managing temporary files.
 
+## Requirements
+
+- Java 21
+
 ## Features
 
 - **CodeExecutor** interface for language-agnostic code execution.
@@ -53,8 +57,10 @@ public class TempFileExample {
     public static void main(String[] args)
             throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // Use a try-with-resources block to ensure the TempFileManager is closed properly.
+        // The manager uses a non-daemon delete thread, so close it to avoid blocking JVM shutdown.
         // This manager has 3 retry attempts with a 100ms delay, and a 5-second shutdown timeout.
-        try (var tempFileManager = new TempFileManager(3, Duration.ofMillis(100), Duration.ofSeconds(5))) {
+        var deleteConfig = new DeleteConfig(3, Duration.ofMillis(100), Duration.ofSeconds(5));
+        try (var tempFileManager = new TempFileManager(deleteConfig)) {
             // Create a temporary file.
             Path tempFile = tempFileManager.createTempFile("my-temp-file", ".txt");
             System.out.println("Created temporary file: " + tempFile);

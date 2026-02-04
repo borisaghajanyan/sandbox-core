@@ -21,7 +21,7 @@ public interface FileSystem {
      * 
      * @param path    The {@link Path} to write the content to.
      * @param content The content to be written.
-     * @throws IOException
+     * @throws IOException If an I/O error occurs while writing.
      */
     void write(Path path, String content) throws IOException;
 

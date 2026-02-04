@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -33,46 +32,22 @@ class TempFileManagerTest {
     Path tempDir;
 
     private TempFileManager newManager() {
-        return new TempFileManager(
-                new DefaultFileSystem(),
-                5,
-                Duration.ofMillis(50),
-                Duration.ofSeconds(2));
+        return new TempFileManager(new DefaultFileSystem(),
+                new DeleteConfig(5, Duration.ofMillis(50), Duration.ofSeconds(2)));
     }
 
     private TempFileManager newManager(FileSystem fs, Duration terminationTimeout) {
-        return new TempFileManager(fs, 5, Duration.ofMillis(50), terminationTimeout);
+        return new TempFileManager(fs, new DeleteConfig(5, Duration.ofMillis(50), terminationTimeout));
     }
 
     @Test
     void constructor_shouldValidateParameters() {
         assertAll("Constructor edge cases",
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(0, Duration.ofMillis(10), Duration.ofMillis(100))),
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(-1, Duration.ofMillis(10), Duration.ofMillis(100))),
-
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, Duration.ZERO, Duration.ofMillis(100))),
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, Duration.ofMillis(-1), Duration.ofMillis(100))),
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, null, Duration.ofMillis(100))),
-
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, Duration.ofMillis(10), Duration.ZERO)),
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, Duration.ofMillis(10), Duration.ofMillis(-1))),
-                () -> assertThrows(IllegalArgumentException.class,
-                        () -> new TempFileManager(1, Duration.ofMillis(10), null)),
-
                 () -> assertThrows(NullPointerException.class,
-                        () -> new TempFileManager(null, 1, Duration.ofMillis(10), Duration.ofMillis(100),
-                                Executors.newSingleThreadExecutor())),
-
+                        () -> new TempFileManager(null,
+                                new DeleteConfig(5, Duration.ofMillis(50), Duration.ofSeconds(2)))),
                 () -> assertThrows(NullPointerException.class,
-                        () -> new TempFileManager(new DefaultFileSystem(), 1, Duration.ofMillis(10),
-                                Duration.ofMillis(100), null)));
+                        () -> new TempFileManager(new DefaultFileSystem(), null)));
     }
 
     @Test

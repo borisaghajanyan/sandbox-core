@@ -2,7 +2,6 @@ package com.baghajanyan.sandbox.core.fs;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * <li>This class owns its executor and must be closed when no longer
  * needed.</li>
  * <li>Calling {@link #close()} initiates an orderly shutdown of the executor,
- * waits up to {@code terminationTimeout} for pending tasks to finish and logs a
- * warning if tasks remain after the timeout.</li>
+ * waits up to {@code deleteConfig.terminationTimeout()} for pending tasks to
+ * finish and logs a warning if tasks remain after the timeout.</li>
  * <li>Submitting tasks after {@code close()} may result in
  * {@link java.util.concurrent.RejectedExecutionException}.</li>
  * </ul>
@@ -55,9 +54,9 @@ import org.slf4j.LoggerFactory;
  * <ul>
  * <li>Synchronous deletion is guaranteed to either succeed or throw an
  * IOException.</li>
- * <li>Asynchronous deletion attempts to delete the file with retry semantics
- * up to {@code maxRetryCount} attempts, waiting {@code retryDelay} between
- * attempts.</li>
+ * <li>Asynchronous deletion attempts to delete the file with retry semantics up
+ * to {@code deleteConfig.maxRetries()} attempts, waiting
+ * {@code deleteConfig.retryDelay()} between attempts.</li>
  * <li>If a deletion task is interrupted, it logs a warning and stops.</li>
  * <li>Because the executor uses non-daemon threads, {@link #close()} may
  * block the JVM shutdown for up to the timeout to allow deletions to
@@ -70,48 +69,30 @@ public class TempFileManager implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TempFileManager.class);
 
     private final FileSystem fileSystem;
-    private final int maxRetryCount;
-    private final Duration retryDelay;
-    private final Duration terminationTimeout;
+    private final DeleteConfig deleteConfig;
     private final ExecutorService deleteExecutor;
 
     /**
      * Creates a {@link TempFileManager} with default FileSystem.
      * 
-     * @param maxRetryCount      The maximum number of retry attempts for file
-     *                           deletion.
-     * @param retryDelay         The {@link Duration} between retry attempts.
-     * @param terminationTimeout The {@link Duration} to wait for pending deletions
+     * @param deleteConfig The {@link DeleteConfig} to use for deletion.
      */
-    public TempFileManager(int maxRetryCount, Duration retryDelay, Duration terminationTimeout) {
-        this(new DefaultFileSystem(), maxRetryCount, retryDelay, terminationTimeout);
+    public TempFileManager(DeleteConfig deleteConfig) {
+        this(new DefaultFileSystem(), deleteConfig);
     }
 
     /**
      * Creates a {@link TempFileManager} with the specified FileSystem.
      * 
-     * @param fileSystem         The {@link FileSystem} implementation to use.
-     * @param maxRetryCount      The maximum number of retry attempts for file
-     *                           deletion.
-     * @param retryDelay         The {@link Duration} between retry attempts.
-     * @param terminationTimeout The {@link Duration} to wait for pending deletions
+     * @param fileSystem   The {@link FileSystem} implementation to use.
+     * @param deleteConfig The {@link DeleteConfig} to use for deletion.
+     * 
+     * @throws NullPointerException if {@code fileSystem} or
+     *                              {@code deleteConfig} is {@code null}
      */
-    public TempFileManager(FileSystem fileSystem, int maxRetryCount, Duration retryDelay, Duration terminationTimeout) {
+    public TempFileManager(FileSystem fileSystem, DeleteConfig deleteConfig) {
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem cannot be null");
-        if (maxRetryCount < 1) {
-            throw new IllegalArgumentException("maxRetryCount must be be positive");
-        }
-        if (retryDelay == null || retryDelay.isNegative() || retryDelay.isZero()) {
-            throw new IllegalArgumentException("retryDelay must be positive");
-        }
-        if (terminationTimeout == null || terminationTimeout.isNegative() || terminationTimeout.isZero()) {
-            throw new IllegalArgumentException("terminationTimeout must be positive");
-        }
-
-        this.maxRetryCount = maxRetryCount;
-        this.retryDelay = retryDelay;
-        this.terminationTimeout = terminationTimeout;
-
+        this.deleteConfig = Objects.requireNonNull(deleteConfig, "deleteConfig cannot be null");
         this.deleteExecutor = Executors.newSingleThreadExecutor(backgroundThreadFactory());
     }
 
@@ -124,35 +105,16 @@ public class TempFileManager implements AutoCloseable {
      * be shut down when {@link #close()} is called.
      * </p>
      *
-     * @param fileSystem         The {@link FileSystem} implementation to use.
-     * @param maxRetryCount      The maximum number of retry attempts for file
-     *                           deletion.
-     * @param retryDelay         The {@link Duration} between retry attempts.
-     * @param terminationTimeout The {@link Duration} to wait for pending deletions
-     * @param deleteExecutor     The {@link ExecutorService} to use for asynchronous
-     *                           deletions (will be shut down on close)
-     * @throws NullPointerException     if {@code fileSystem} or
-     *                                  {@code deleteExecutor} is {@code null}
-     * @throws IllegalArgumentException if {@code maxRetryCount} &lt; 1 or
-     *                                  {@code retryDelay} is null or non-positive
+     * @param fileSystem     The {@link FileSystem} implementation to use.
+     * @param deleteConfig   The {@link DeleteConfig} to use for deletion.
+     * @param deleteExecutor The {@link ExecutorService} to use for asynchronous
+     *                       deletions (will be shut down on close)
+     * @throws NullPointerException if {@code fileSystem} or
+     *                              {@code deleteExecutor} is {@code null}
      */
-    public TempFileManager(FileSystem fileSystem, int maxRetryCount, Duration retryDelay, Duration terminationTimeout,
-            ExecutorService deleteExecutor) {
+    public TempFileManager(FileSystem fileSystem, DeleteConfig deleteConfig, ExecutorService deleteExecutor) {
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem cannot be null");
-        if (maxRetryCount < 1) {
-            throw new IllegalArgumentException("maxRetryCount must be be positive");
-        }
-        if (retryDelay == null || retryDelay.isNegative() || retryDelay.isZero()) {
-            throw new IllegalArgumentException("retryDelay must be positive");
-        }
-        if (terminationTimeout == null || terminationTimeout.isNegative() || terminationTimeout.isZero()) {
-            throw new IllegalArgumentException("terminationTimeout must be positive");
-        }
-
-        this.maxRetryCount = maxRetryCount;
-        this.retryDelay = retryDelay;
-        this.terminationTimeout = terminationTimeout;
-
+        this.deleteConfig = Objects.requireNonNull(deleteConfig, "deleteConfig cannot be null");
         this.deleteExecutor = Objects.requireNonNull(deleteExecutor, "deleteExecutor cannot be null");
     }
 
@@ -161,8 +123,9 @@ public class TempFileManager implements AutoCloseable {
      *
      * <p>
      * Already submitted deletion tasks are allowed to complete. This method blocks
-     * for up to {@code terminationTimeout} waiting for pending tasks to finish.
-     * After the timeout, any unfinished tasks may remain and a warning is logged.
+     * for up to {@code deleteConfig.terminationTimeout()} waiting for pending tasks
+     * to finish. After the timeout, any unfinished tasks may remain and a warning
+     * is logged.
      * </p>
      *
      * <p>
@@ -175,9 +138,17 @@ public class TempFileManager implements AutoCloseable {
     public void close() {
         deleteExecutor.shutdown();
         try {
-            boolean allDone = deleteExecutor.awaitTermination(terminationTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            boolean allDone = deleteExecutor.awaitTermination(deleteConfig.terminationTimeout().toMillis(),
+                    TimeUnit.MILLISECONDS);
             if (!allDone) {
-                logger.warn("Not all temp files were deleted within {} seconds", terminationTimeout.toSeconds());
+                logger.warn("Not all temp files were deleted within {} seconds",
+                        deleteConfig.terminationTimeout().toSeconds());
+                deleteExecutor.shutdownNow();
+                boolean forcedDone = deleteExecutor.awaitTermination(deleteConfig.terminationTimeout().toMillis(),
+                        TimeUnit.MILLISECONDS);
+                if (!forcedDone) {
+                    logger.warn("Deletion executor did not terminate after forced shutdown");
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -225,7 +196,7 @@ public class TempFileManager implements AutoCloseable {
     }
 
     private void deleteWithRetry(Path path) {
-        for (int attempt = 1; attempt <= maxRetryCount; attempt++) {
+        for (int attempt = 1; attempt <= deleteConfig.maxRetries(); attempt++) {
             if (Thread.currentThread().isInterrupted()) {
                 logger.warn("Delete task interrupted for {}", path);
                 return;
@@ -241,18 +212,18 @@ public class TempFileManager implements AutoCloseable {
 
             } catch (IOException e) {
                 logger.warn("Failed to delete temp file (attempt {}/{}, retryDelay={}ms, error={}): {}",
-                        attempt, maxRetryCount, retryDelay.toMillis(), e.getMessage(), path);
+                        attempt, deleteConfig.maxRetries(), deleteConfig.retryDelay().toMillis(), e.getMessage(), path);
 
                 sleepBeforeRetry();
             }
         }
 
-        logger.error("Giving up deleting temp file after {} attempts: {}", maxRetryCount, path);
+        logger.error("Giving up deleting temp file after {} attempts: {}", deleteConfig.maxRetries(), path);
     }
 
     private void sleepBeforeRetry() {
         try {
-            TimeUnit.MILLISECONDS.sleep(retryDelay.toMillis());
+            TimeUnit.MILLISECONDS.sleep(deleteConfig.retryDelay().toMillis());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
 
