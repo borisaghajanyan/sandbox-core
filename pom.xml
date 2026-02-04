@@ -3,9 +3,9 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.baghajanyan</groupId>
+	<groupId>io.github.borisaghajanyan</groupId>
 	<artifactId>sandbox-core</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>sandbox-core</name>
 	<description>Core library for language-agnostic code execution sandbox, providing common models and executor interfaces.</description>
 	<properties>
@@ -13,9 +13,31 @@
 		<junit.version>5.10.2</junit.version>
 		<mockito.version>5.12.0</mockito.version>
 		<maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+		<maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
+		<maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
 		<slf4j.version>2.0.17</slf4j.version>
 	</properties>
 	<url>https://github.com/borisaghajanyan/sandbox-core</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Boris Aghajanyan</name>
+			<email>boris.aghajanyan@gmail.com</email>
+		</developer>
+	</developers>
+	<scm>
+		<url>https://github.com/borisaghajanyan/sandbox-core</url>
+		<connection>scm:git:git://github.com/borisaghajanyan/sandbox-core.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/borisaghajanyan/sandbox-core.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
 	<dependencies>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -67,6 +89,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -76,7 +99,43 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${maven-gpg-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
