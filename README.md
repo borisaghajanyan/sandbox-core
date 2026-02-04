@@ -29,13 +29,28 @@ To build the project, run the following command:
 
 ## Usage
 
-Add as Maven dependency (after building locally):
+### JitPack
+
+You can consume this library directly from JitPack.
+
+1. Add the JitPack repository:
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+```
+
+1. Add the dependency:
 
 ```xml
 <dependency>
-  <groupId>com.baghajanyan</groupId>
+  <groupId>com.github.borisaghajanyan</groupId>
   <artifactId>sandbox-core</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>main-SNAPSHOT</version>
 </dependency>
 ```
 
