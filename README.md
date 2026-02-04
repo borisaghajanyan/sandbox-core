@@ -50,7 +50,7 @@ You can consume this library directly from JitPack.
 <dependency>
   <groupId>com.github.borisaghajanyan</groupId>
   <artifactId>sandbox-core</artifactId>
-  <version>main-SNAPSHOT</version>
+  <version>{TAG}</version>
 </dependency>
 ```
 
